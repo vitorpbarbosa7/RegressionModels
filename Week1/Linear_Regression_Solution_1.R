@@ -57,7 +57,8 @@ plot(estimator)
 mse = mean(estimator$residuals^2)
 
 
-# Solução pela forma do curso, visualizando o deslocamento dos eix --------
+# Solução pela forma do curso, visualizando o deslocamento do eixo por centrar os dados na média --------
+#Dados centrados na média
 
 centeredmodel = lm(I(child - mean(child)) ~ I(parent - mean(parent)) - 1, data = galton)
 
