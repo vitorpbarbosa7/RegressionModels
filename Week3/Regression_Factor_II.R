@@ -39,7 +39,7 @@ summary(lm(count ~
              I(1 * (spray == 'B')) + I(1 * (spray == 'C')) +
              I(1 * (spray == 'D')) + I(1 * (spray == 'E')) + 
              I(1 * (spray == 'F')) + I(1 * (spray == 'A')), 
-           data = InsectSprays))$coef
+           data = InsectSprays))
 
 # Removendo a intersecção, ele não considera nenhum como referência (que seria o primeiro nível do fator spray)
 summary(lm(count ~ spray - 1, data = InsectSprays))$coef #Aqui a referência do teste de hipótese é 0, ou seja, ver se cada média é ou não diferente de 0
@@ -52,5 +52,7 @@ str(InsectSprays$spray)
 
 # With relevel, C will be the first level, and so the reference
 #Intersecção será a média de C
-spray2 = relevel(InsectSprays$spray, "C")
+spray2 = relevel(InsectSprays$spray, "C") # Ele muda a referência com relevel 
 summary(lm(count ~ spray2, data = InsectSprays))$coef
+
+summary(lm(count ~ spray2 - 1, data = InsectSprays))
