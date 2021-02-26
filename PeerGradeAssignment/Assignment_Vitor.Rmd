@@ -1,0 +1,139 @@
+---
+title: "Motor Trend US 1974 Magazine Analysis"
+author: "Vitor Pereira Barbosa"
+date: "10/21/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1 - Introduction
+##### This report bring valuable information about how manual or automatic transmission can influence the fuel efficiency from cars. The dataset comprises data from the year of 1974, with 10 different aspects of design and engineering from 32 automobiles.
+
+# 2 - Summary
+### The analysis is performed as follows:
+#### - Exploratory Data Analysis with visual tools to asses the difference in fuel efficienty due to the automatic or manual transmission
+#### - Use of Hypoteshis test the show the difference statistical significance
+#### - Simple Linear Regression and Multivariate Linear Regression to quantify how much automatic or manual tranmission affects the car's fuel efficiency
+
+# 3 - Automatic or manual transmission influence over MPG
+
+## Exploratory Data Analysis
+
+### As we can see from the chart below, there is a visual difference in mpg when comparing 
+automatic (am = 0) and manual (am=1) transmission. The median and mean from mpg is higher in manual than in automatic transmission. 
+
+```{r EDA, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(dplyr)
+data = mtcars
+
+average = data %>% 
+  group_by(am) %>%
+  summarise_at(vars(mpg), list(name = mean))
+names(average) = c('am','mean')
+average$mean = round(average$mean, 2)
+
+ggplot(data, aes(x = factor(am), y = mpg)) + 
+  geom_boxplot(aes(fill = factor(am)), alpha = 0.3) + 
+  geom_jitter() + 
+  geom_text(data = average, aes(label = mean, y = mean), size = 4) + 
+  ylab("Fuel efficiency") + 
+  xlab("Automatic or manual transmission engine") + 
+  ggtitle("Fuel efficiencty as function of automatic or manual tranmission engine")
+```
+
+### T test to asses the statistical difference from the two means
+
+
+```{r ttest, echo = FALSE, message = FALSE}
+t.test(mpg ~ factor(am), data = data)
+```
+#### Since the p-value is 0.001374, with 5 % significance level it is possible to reject the Null Hypothesis of means equality, proving a influence from transmission over fuel efficiency
+
+# 4 - Linear Regression Model
+```{r linearregression, echo = FALSE, message = FALSE}
+lm = lm(mpg ~ factor(am), data = data)
+summary(lm)
+```
+#### From the summary presented above, it is possible to verify that the beta0 coefficient (Intercept) represents the average value of mpg from automatic transmission (am = 0) and the beta1 coefficient (factor(am)1) represents the expected increase in mpg from using manual transmission in relation to automatic transmission. 
+
+#### The Pr(>|t|) corresponds to the coefficient p-values, in which we can verify that both are significant with 1 % significance level
+
+#### Besides that, it is also necessary to verify the beta1 confidence level:
+
+```{r confidencelevel, echo = FALSE, message = FALSE}
+confint(lm, level = .95)[2,]
+```
+
+#### As printed above, with 95 % confidence level, it's possible to verify increases in fuel efficiency from 3.64 to 10.84, due to car's transmission type presented. 
+
+## Variance Inflation Factor Analysis 
+
+##### The VIF analysis is executed to help in deciding which variables should be used in a multivariate regression analysis
+
+```{r vif, echo = FALSE, message = FALSE}
+data = mtcars
+lmvif = lm(mpg ~ ., data = data)
+library(car)
+
+vif(lmvif)
+```
+
+## The Multivariate Linear Regression was executed several times, with three differents sets of regressors:
+
+```{r multivariate, message = FALSE}
+#am, drat and vs
+mlm = lm(mpg ~ am + drat + vs, data = data)
+summary(mlm)$coefficients
+
+#qsec, vs and am
+mlm2 = lm(mpg ~ am + qsec + vs, data = data)
+summary(mlm2)$coefficients
+
+#qec, wt and am
+mlm3 = lm(mpg ~ am + wt + qsec, data = data)
+summary(mlm3)$coefficients
+```
+
+#### As we can see, only in the third model, using "qsec", "wt" and "am" as regressors the p-values are relevant with 5 % significance level. It is also possible to verify the confidence level from "am" coefficient
+
+##### With "qsec" and "wt" included in the regression, the effect of "am" is reduced, but still relevant, with 0.05 to 5.83 increase in mpg with 95 % confidence level. 
+
+```{r newam_conf, echo=FALSE, message = FALSE}
+confint(mlm3, level = .95)[2,]
+```   
+
+# 5 - Comparing models
+
+#### The ANOVA analysis allows the comparison between two models, in that case to asses the difference of a new model with 3 regressors in respect of a model with only one regressor.
+```{r compare, echo=FALSE, message = FALSE}
+anova(lm, mlm3)
+```
+
+#### As presented, the second model is really different from the first one (p-value of 1.55e-09)
+
+# 6 - Residual plot
+```{r residual, echo = FALSE, message = FALSE}
+par(mfrow = c(2,2))
+plot(mlm3)
+```
+
+#### Residual average value (Check Gauss-Markov assumption of linear regression)
+```{r residual_mean, echo = FALSE, message = FALSE}
+mean(resid(mlm3))
+```
+#### • Looking at the residual plots chart, the first one on the right shows a random data distribuition, and calculating the residual mean, the value is 8.8500145e-17, which respects the Gauss-Markov assumption of linear regression of residual mean value of zero. 
+
+#### • The Quantile-Quantile plot is satisfactory with only a slighly deviation at the far left and far right sides. 
+
+#### • In fact the Standardized residuals plot shows a slighly systematically distribuition which was not explained by the model
+
+#### • In the Residuals vs Leverage plot, there are two cars with leverage values above 0.25
+
+# 7 - Conclusion
+
+##### The manual transmission is better for fuel efficiency and it is possible to quantify how much it influences the "mpg" variable, with only one variable (the "am" regressor), affecting from 3.64 to 10.85 and also with the weight ("wt") and acceleration measure ("qsec") affecting from 0.05 to 5.83.
+
